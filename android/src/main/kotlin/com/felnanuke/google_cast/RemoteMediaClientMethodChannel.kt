@@ -377,7 +377,8 @@ class RemoteMediaClientMethodChannel : FlutterPlugin, MethodChannel.MethodCallHa
         customData: Map<*, *>?
     ): com.google.android.gms.cast.MediaLoadRequestData {
         val autoPlay = arguments["autoPlay"] as? Boolean ?: true
-        val playPosition = arguments["playPosition"] as? Int ?: 0
+        // null のときは currentTime を送らず、レシーバー既定の開始位置 (LIVE は live edge) に任せる。
+        val playPosition = arguments["playPosition"] as? Int
         val activeTrackIds = (arguments["activeTrackIds"] as? ArrayList<Number>)?.map { it.toLong() }?.toLongArray()
         val credentials = arguments["credentials"] as? String
         val credentialsType = arguments["credentialsType"] as? String
@@ -386,8 +387,11 @@ class RemoteMediaClientMethodChannel : FlutterPlugin, MethodChannel.MethodCallHa
         val requestDataBuilder = com.google.android.gms.cast.MediaLoadRequestData.Builder()
             .setMediaInfo(mediaInfo)
             .setAutoplay(autoPlay)
-            .setCurrentTime((playPosition * 1000).toLong())
             .setPlaybackRate(playbackRate)
+
+        if (playPosition != null) {
+            requestDataBuilder.setCurrentTime((playPosition * 1000).toLong())
+        }
 
         if (customData != null) {
             requestDataBuilder.setCustomData(mapToJsonObject(customData))
